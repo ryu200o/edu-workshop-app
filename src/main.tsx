@@ -1,11 +1,19 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+import { AuthProvider, useAuth } from "@/features/auth/context/auth-context";
+import type { AuthContextType } from "@/features/auth/types";
+import { queryClient } from "@/shared/api/query-client";
 import { routeTree } from "./routeTree.gen";
 
-const router = createRouter({
+export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
   scrollRestoration: true,
+  context: {
+    auth: undefined as unknown as AuthContextType,
+    queryClient,
+  },
 });
 
 declare module "@tanstack/react-router" {
@@ -14,11 +22,25 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const rootElement = document.getElementById("app");
+function InnerApp() {
+  const auth = useAuth();
+  return <RouterProvider router={router} context={{ auth, queryClient }} />;
+}
 
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <InnerApp />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+const rootElement = document.getElementById("app");
 if (!rootElement) {
   throw new Error("Root element not found");
 }
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(<RouterProvider router={router} />);
+root.render(<App />);

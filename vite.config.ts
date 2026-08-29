@@ -8,6 +8,15 @@ const config = defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    port: 3000,
+    proxy: {
+      "/api": {
+        target: "http://100.83.71.112:8080",
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     devtools(),
     tailwindcss(),
