@@ -4,6 +4,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { AuthContextType } from "@/features/auth/types";
+import { Toaster } from "@/shared/components/ui/sonner";
+import { ThemeProvider } from "@/shared/lib/theme-provider";
 
 import "../styles.css";
 
@@ -18,8 +20,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootComponent() {
   return (
-    <>
+    <ThemeProvider defaultTheme="system" storageKey="edu_theme">
       <Outlet />
+      <Toaster />
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       <TanStackDevtools
         config={{
@@ -32,6 +35,6 @@ function RootComponent() {
           },
         ]}
       />
-    </>
+    </ThemeProvider>
   );
 }
