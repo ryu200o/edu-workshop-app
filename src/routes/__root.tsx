@@ -1,19 +1,24 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { QueryClientProvider } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { queryClient } from "@/shared/api/query-client";
+import type { AuthContextType } from "@/features/auth/types";
 
 import "../styles.css";
 
-export const Route = createRootRoute({
+export interface MyRouterContext {
+  auth: AuthContextType;
+  queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: RootComponent,
 });
 
 function RootComponent() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <Outlet />
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       <TanStackDevtools
@@ -27,6 +32,6 @@ function RootComponent() {
           },
         ]}
       />
-    </QueryClientProvider>
+    </>
   );
 }
