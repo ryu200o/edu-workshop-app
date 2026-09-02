@@ -354,7 +354,11 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /**
+     * List rooms — paged/filtered/sorted/searched
+     * @description FE Data Table: page 0-indexed, size 1..100 default 20, sort field,dir whitelist (name,building,floor,code,capacity,state,createdAt,updatedAt), search on name & code, filters building/floor/status/minCapacity/maxCapacity. Returns PageEnvelope with currentMaintenanceSchedule LEFT JOIN active window.
+     */
+    get: operations["list"];
     put?: never;
     /**
      * Create room
@@ -378,23 +382,6 @@ export interface paths {
     put?: never;
     /** Reactivate room (MAINTENANCE → ACTIVE) */
     post: operations["reactivate"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/rooms/{id}/maintenance": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Place room under maintenance (ACTIVE → MAINTENANCE) */
-    post: operations["placeUnderMaintenance"];
     delete?: never;
     options?: never;
     head?: never;
@@ -888,7 +875,10 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Get room by id */
+    /**
+     * Get room by id (detail with maintenance)
+     * @description Returns RoomDetailView with maintenanceSchedules ordered by startTime desc. Cached 24h (rooms:detail:{id}).
+     */
     get: operations["getById_1"];
     put?: never;
     post?: never;
@@ -905,8 +895,32 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Get room by name */
+    /**
+     * Get room by name
+     * @deprecated
+     * @description Deprecated — use GET /api/v1/rooms?search= instead. Kept for backward compat.
+     */
     get: operations["getByName"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/rooms/buildings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get buildings metadata
+     * @description Aggregated building metadata: building, distinct floors sorted asc, totalRooms. Cached 1h (rooms:buildings).
+     */
+    get: operations["getBuildings"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1126,7 +1140,6 @@ export interface components {
       /** Format: date-time */
       endTime?: string;
       reason?: string;
-      operator?: string;
     };
     RegisterWorkshopRequest: {
       /** Format: uuid */
@@ -1261,6 +1274,39 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
     };
+    PageEnvelope: {
+      content?: unknown[];
+      /** Format: int32 */
+      page?: number;
+      /** Format: int32 */
+      size?: number;
+      /** Format: int64 */
+      totalElements?: number;
+      /** Format: int32 */
+      totalPages?: number;
+      first?: boolean;
+      last?: boolean;
+    };
+    AuditActor: {
+      /** Format: uuid */
+      userId?: string;
+      identifier?: string;
+      roles?: string[];
+    };
+    MaintenanceScheduleView: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      roomId?: string;
+      /** Format: date-time */
+      startTime?: string;
+      /** Format: date-time */
+      endTime?: string;
+      reason?: string;
+      createdBy?: components["schemas"]["AuditActor"];
+      /** Format: date-time */
+      createdAt?: string;
+    };
     RoomDetailView: {
       /** Format: uuid */
       id?: string;
@@ -1268,9 +1314,17 @@ export interface components {
       building?: string;
       /** Format: int32 */
       floor?: number;
+      code?: string;
       /** Format: int32 */
       capacity?: number;
       state?: string;
+      createdBy?: components["schemas"]["AuditActor"];
+      updatedBy?: components["schemas"]["AuditActor"];
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+      maintenanceSchedules?: components["schemas"]["MaintenanceScheduleView"][];
     };
     RoomSummaryView: {
       /** Format: uuid */
@@ -1279,6 +1333,19 @@ export interface components {
       building?: string;
       /** Format: int32 */
       floor?: number;
+      code?: string;
+      /** Format: int32 */
+      capacity?: number;
+      state?: string;
+      /** Format: date-time */
+      createdAt?: string;
+      currentMaintenanceSchedule?: components["schemas"]["MaintenanceScheduleView"];
+    };
+    BuildingMetadataView: {
+      building?: string;
+      floors?: number[];
+      /** Format: int64 */
+      totalRooms?: number;
     };
     MyRegistrationView: {
       /** Format: uuid */
@@ -3102,6 +3169,90 @@ export interface operations {
       };
     };
   };
+  list: {
+    parameters: {
+      query?: {
+        /** @description 0-indexed page */
+        page?: number;
+        /** @description page size 1..100 */
+        size?: number;
+        /** @description sort field,dir e.g. building,asc (whitelist: name,building,floor,code,capacity,state,createdAt,updatedAt) */
+        sort?: string;
+        /** @description search on name & code (case-insensitive) */
+        search?: string;
+        /** @description filter building */
+        building?: string;
+        /** @description filter floor */
+        floor?: number;
+        /** @description filter physical state ACTIVE/MAINTENANCE/DEACTIVATED */
+        status?: string;
+        /** @description min capacity inclusive */
+        minCapacity?: number;
+        /** @description max capacity inclusive */
+        maxCapacity?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PageEnvelope"];
+        };
+      };
+      /** @description Invalid page/size/sort/status/capacity */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
   create_1: {
     parameters: {
       query?: never;
@@ -3195,80 +3346,6 @@ export interface operations {
     requestBody?: never;
     responses: {
       /** @description Reactivated */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/problem+json": components["schemas"]["ProblemDetail"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/problem+json": components["schemas"]["ProblemDetail"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/problem+json": components["schemas"]["ProblemDetail"];
-        };
-      };
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/problem+json": components["schemas"]["ProblemDetail"];
-        };
-      };
-      /** @description Illegal state / optimistic lock */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/problem+json": components["schemas"]["ProblemDetail"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/problem+json": components["schemas"]["ProblemDetail"];
-        };
-      };
-    };
-  };
-  placeUnderMaintenance: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Placed under maintenance */
       204: {
         headers: {
           [name: string]: unknown;
@@ -5590,6 +5667,71 @@ export interface operations {
         };
       };
       /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+    };
+  };
+  getBuildings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BuildingMetadataView"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/problem+json": components["schemas"]["ProblemDetail"];
+        };
+      };
+      /** @description Not Found */
       404: {
         headers: {
           [name: string]: unknown;
