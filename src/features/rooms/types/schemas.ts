@@ -12,12 +12,12 @@ export const createRoomSchema = z.object({
     .trim()
     .min(1, "Tòa nhà không được để trống")
     .max(50, "Tối đa 50 ký tự"),
-  floor: z.coerce
+  floor: z
     .number()
     .int("Tầng phải là số nguyên")
     .min(-5, "Tầng hầm tối đa -5")
     .max(100, "Tầng tối đa 100"),
-  code: z.coerce
+  code: z
     .number()
     .int("Mã phòng phải là số nguyên")
     .positive("Mã phòng phải là số nguyên dương"),
@@ -26,7 +26,7 @@ export const createRoomSchema = z.object({
     .trim()
     .min(1, "Tên phòng không được để trống")
     .max(100, "Tên phòng tối đa 100 ký tự"),
-  capacity: z.coerce
+  capacity: z
     .number()
     .int("Sức chứa phải là số nguyên")
     .min(1, "Sức chứa tối thiểu 1 người")
@@ -41,12 +41,12 @@ export const editRoomSchema = z.object({
     .trim()
     .min(1, "Tòa nhà không được để trống")
     .max(50, "Tối đa 50 ký tự"),
-  floor: z.coerce
+  floor: z
     .number()
     .int("Tầng phải là số nguyên")
     .min(-5, "Tầng hầm tối đa -5")
     .max(100, "Tầng tối đa 100"),
-  code: z.coerce
+  code: z
     .number()
     .int("Mã phòng phải là số nguyên")
     .positive("Mã phòng phải là số nguyên dương"),
@@ -55,7 +55,7 @@ export const editRoomSchema = z.object({
     .trim()
     .min(1, "Tên phòng không được để trống")
     .max(100, "Tên phòng tối đa 100 ký tự"),
-  capacity: z.coerce
+  capacity: z
     .number()
     .int("Sức chứa phải là số nguyên")
     .min(1, "Sức chứa tối thiểu 1 người")
