@@ -9,7 +9,7 @@ import type {
 export const authApi = {
   async login(payload: LoginRequest): Promise<AuthTokenResponse> {
     const { data } = await apiClient.post<AuthTokenResponse>(
-      "/api/v1/iam/auth/login",
+      "/v1/iam/auth/login",
       payload,
     );
     return data;
@@ -17,18 +17,18 @@ export const authApi = {
 
   async refresh(payload: TokenRequest): Promise<AuthTokenResponse> {
     const { data } = await refreshClient.post<AuthTokenResponse>(
-      "/api/v1/iam/auth/refresh",
+      "/v1/iam/auth/refresh",
       payload,
     );
     return data;
   },
 
   async logout(payload: TokenRequest): Promise<void> {
-    await apiClient.post("/api/v1/iam/auth/logout", payload);
+    await apiClient.post("/v1/iam/auth/logout", payload);
   },
 
   async getMe(): Promise<MeView> {
-    const { data } = await apiClient.get<MeView>("/api/v1/iam/me");
+    const { data } = await apiClient.get<MeView>("/v1/iam/me");
     return data;
   },
 };

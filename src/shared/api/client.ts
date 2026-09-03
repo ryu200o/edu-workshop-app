@@ -183,7 +183,7 @@ apiClient.interceptors.response.use(
         mustChangePassword?: boolean;
       }
       const { data } = await refreshClient.post<RefreshTokenResponse>(
-        "/api/v1/iam/auth/refresh",
+        "/v1/iam/auth/refresh",
         { refreshToken },
       );
 
