@@ -6,12 +6,15 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import { useAuth } from "@/features/auth/context/auth-context";
+import { tokenManager } from "@/shared/api/token-manager";
 import { Header } from "@/shared/components/layout/header";
 import { Sidebar } from "@/shared/components/layout/sidebar";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
+    const isAuth =
+      context.auth?.isAuthenticated || Boolean(tokenManager.getAccessToken());
+    if (!isAuth) {
       throw redirect({
         to: "/login",
         search: {
@@ -27,8 +30,10 @@ function AuthenticatedLayout() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
+  const isAuth = isAuthenticated || Boolean(tokenManager.getAccessToken());
+
   // Safety net: In case route guard was bypassed, securely redirect to /login instead of returning null
-  if (!isAuthenticated) {
+  if (!isAuth) {
     return (
       <Navigate
         to="/login"

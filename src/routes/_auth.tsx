@@ -1,8 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { tokenManager } from "@/shared/api/token-manager";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context }) => {
-    if (context.auth.isAuthenticated) {
+    const isAuth =
+      context.auth?.isAuthenticated || Boolean(tokenManager.getAccessToken());
+    if (isAuth) {
       throw redirect({ to: "/" });
     }
   },

@@ -6,9 +6,11 @@
     "useIgnoreFile": false
   },
   "files": {
-    "ignoreUnknown": false,
+    "ignoreUnknown": true,
     "includes": [
       "**/src/**/*",
+      "**/tests/**/*",
+      "**/playwright.config.ts",
       "**/.vscode/**/*",
       "**/index.html",
       "**/vite.config.ts",

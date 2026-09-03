@@ -1,5 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import {
   AlertCircle,
   Eye,
@@ -43,6 +47,7 @@ function getSafeRedirect(target?: string): string {
 function LoginPage() {
   const { redirect: redirectParam } = Route.useSearch();
   const navigate = useNavigate();
+  const router = useRouter();
   const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -69,6 +74,7 @@ function LoginPage() {
 
     try {
       await login(values);
+      await router.invalidate();
       const safePath = getSafeRedirect(redirectParam);
       navigate({ to: safePath });
     } catch (err) {
