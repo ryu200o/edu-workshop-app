@@ -139,8 +139,12 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // If not a 401 error or no config available, normalize and reject
-    if (error.response?.status !== 401 || !originalRequest) {
+    const isAuthEndpoint =
+      originalRequest?.url?.includes("/auth/login") ||
+      originalRequest?.url?.includes("/auth/refresh");
+
+    // If not a 401 error, no config available, or an auth endpoint itself, normalize and reject immediately
+    if (error.response?.status !== 401 || !originalRequest || isAuthEndpoint) {
       return Promise.reject(normalizeProblemDetail(error));
     }
 

@@ -27,7 +27,7 @@ export async function setupMockApi(page: Page) {
           type: "https://errors.eduworkshop.local/authentication-failed",
           title: "Unauthorized",
           status: 401,
-          detail: "Email hoặc mật khẩu không chính xác.",
+          detail: "Invalid email or password.",
           code: "INVALID_CREDENTIALS",
         }),
       });
