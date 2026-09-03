@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import { AuthProvider, useAuth } from "@/features/auth/context/auth-context";
 import type { AuthContextType } from "@/features/auth/types";
 import { queryClient } from "@/shared/api/query-client";
+import { AppSplashLoader } from "@/shared/components/feedback/app-splash-loader";
 import { routeTree } from "./routeTree.gen";
 
 export const router = createRouter({
@@ -24,6 +25,12 @@ declare module "@tanstack/react-router" {
 
 function InnerApp() {
   const auth = useAuth();
+
+  // Deterministic Auth Bootstrapping: Do not mount RouterProvider until initial auth state is resolved
+  if (auth.isLoading) {
+    return <AppSplashLoader />;
+  }
+
   return <RouterProvider router={router} context={{ auth, queryClient }} />;
 }
 

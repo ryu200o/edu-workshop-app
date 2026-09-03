@@ -4,6 +4,9 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { AuthContextType } from "@/features/auth/types";
+import { NotFoundComponent } from "@/shared/components/feedback/not-found";
+import { RouteErrorComponent } from "@/shared/components/feedback/route-error";
+import { RoutePendingComponent } from "@/shared/components/feedback/route-pending";
 import { Toaster } from "@/shared/components/ui/sonner";
 import { ThemeProvider } from "@/shared/lib/theme-provider";
 
@@ -15,6 +18,9 @@ export interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+  errorComponent: RouteErrorComponent,
+  notFoundComponent: NotFoundComponent,
+  pendingComponent: RoutePendingComponent,
   component: RootComponent,
 });
 

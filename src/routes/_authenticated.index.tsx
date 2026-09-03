@@ -241,7 +241,8 @@ function DashboardPage() {
             <div className="flex items-center gap-3.5">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary font-bold text-primary-foreground text-lg">
                 {user?.fullName?.charAt(0) ||
-                  user?.email?.charAt(0)?.toUpperCase()}
+                  user?.email?.charAt(0)?.toUpperCase() ||
+                  "U"}
               </div>
               <div className="flex-1 overflow-hidden">
                 <p className="truncate font-semibold text-foreground text-sm">

@@ -36,7 +36,7 @@ export const roomsApi = {
       queryParams.maxCapacity = params.maxCapacity;
 
     const response = await apiClient.get<PageEnvelope<RoomSummaryView>>(
-      "/api/v1/rooms",
+      "/v1/rooms",
       {
         params: queryParams,
       },
@@ -45,13 +45,13 @@ export const roomsApi = {
   },
 
   getRoomById: async (id: string): Promise<RoomDetailView> => {
-    const response = await apiClient.get<RoomDetailView>(`/api/v1/rooms/${id}`);
+    const response = await apiClient.get<RoomDetailView>(`/v1/rooms/${id}`);
     return response.data;
   },
 
   getBuildings: async (): Promise<BuildingMetadataView[]> => {
     const response = await apiClient.get<BuildingMetadataView[]>(
-      "/api/v1/rooms/buildings",
+      "/v1/rooms/buildings",
     );
     return response.data;
   },
@@ -60,7 +60,7 @@ export const roomsApi = {
     payload: CreateRoomRequest,
     idempotencyKey: string,
   ): Promise<void> => {
-    await apiClient.post("/api/v1/rooms", payload, {
+    await apiClient.post("/v1/rooms", payload, {
       headers: {
         "Idempotency-Key": idempotencyKey,
       },
@@ -68,40 +68,40 @@ export const roomsApi = {
   },
 
   renameRoom: async (id: string, payload: RenameRoomRequest): Promise<void> => {
-    await apiClient.put(`/api/v1/rooms/${id}/rename`, payload);
+    await apiClient.put(`/v1/rooms/${id}/rename`, payload);
   },
 
   relocateRoom: async (
     id: string,
     payload: RelocateRoomRequest,
   ): Promise<void> => {
-    await apiClient.put(`/api/v1/rooms/${id}/relocate`, payload);
+    await apiClient.put(`/v1/rooms/${id}/relocate`, payload);
   },
 
   changeRoomCode: async (
     id: string,
     payload: ChangeRoomCodeRequest,
   ): Promise<void> => {
-    await apiClient.put(`/api/v1/rooms/${id}/code`, payload);
+    await apiClient.put(`/v1/rooms/${id}/code`, payload);
   },
 
   changeRoomCapacity: async (
     id: string,
     payload: ChangeRoomCapacityRequest,
   ): Promise<void> => {
-    await apiClient.put(`/api/v1/rooms/${id}/capacity`, payload);
+    await apiClient.put(`/v1/rooms/${id}/capacity`, payload);
   },
 
   placeUnderMaintenance: async (id: string): Promise<void> => {
-    await apiClient.post(`/api/v1/rooms/${id}/maintenance`);
+    await apiClient.post(`/v1/rooms/${id}/maintenance`);
   },
 
   reactivateRoom: async (id: string): Promise<void> => {
-    await apiClient.post(`/api/v1/rooms/${id}/reactivate`);
+    await apiClient.post(`/v1/rooms/${id}/reactivate`);
   },
 
   deactivateRoom: async (id: string): Promise<void> => {
-    await apiClient.post(`/api/v1/rooms/${id}/deactivate`);
+    await apiClient.post(`/v1/rooms/${id}/deactivate`);
   },
 
   scheduleMaintenance: async (
@@ -109,7 +109,7 @@ export const roomsApi = {
     payload: ScheduleMaintenanceRequest,
     idempotencyKey: string,
   ): Promise<void> => {
-    await apiClient.post(`/api/v1/rooms/${id}/maintenance-schedules`, payload, {
+    await apiClient.post(`/v1/rooms/${id}/maintenance-schedules`, payload, {
       headers: {
         "Idempotency-Key": idempotencyKey,
       },

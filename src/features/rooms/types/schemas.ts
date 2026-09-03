@@ -86,9 +86,9 @@ export type ScheduleMaintenanceFormValues = z.infer<
 >;
 
 export const roomSearchParamsSchema = z.object({
-  page: z.coerce.number().int().min(1).optional().default(1),
-  size: z.coerce.number().int().min(1).max(100).optional().default(10),
-  sort: z.string().optional().default("building,asc"),
+  page: z.coerce.number().int().min(1).optional(),
+  size: z.coerce.number().int().min(1).max(100).optional(),
+  sort: z.string().optional(),
   search: z.string().optional(),
   building: z.string().optional(),
   floor: z.coerce.number().int().optional(),
