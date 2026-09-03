@@ -1,12 +1,17 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import {
+  createFileRoute,
+  Navigate,
+  Outlet,
+  redirect,
+  useLocation,
+} from "@tanstack/react-router";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { Header } from "@/shared/components/layout/header";
 import { Sidebar } from "@/shared/components/layout/sidebar";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated && !context.auth.isLoading) {
+    if (!context.auth.isAuthenticated) {
       throw redirect({
         to: "/login",
         search: {
@@ -19,23 +24,20 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">
-            Đang khởi tạo phiên làm việc...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // Safety net: In case route guard was bypassed, securely redirect to /login instead of returning null
   if (!isAuthenticated) {
-    return null;
+    return (
+      <Navigate
+        to="/login"
+        search={{
+          redirect: location.href,
+        }}
+        replace
+      />
+    );
   }
 
   return (
