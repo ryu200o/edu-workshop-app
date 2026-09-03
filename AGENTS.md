@@ -154,6 +154,9 @@ Mỗi domain module (`auth`, `workshops`, `rooms`, `attendance`) là một ranh 
 * **Command:** `pnpm run codegen:types`.
 * **RFC 7807 Standard:** Backend trả về `ProblemDetail` payload. Client bóc tách `detail`/`title` cho global notification và `errors[]` cho form/field error context.
 * **Auth & Refresh:** Silent Refresh xử lý tập trung tại Axios Interceptor (hàng đợi 401). Khi refresh thất bại, dọn sạch session và redirect về `/_auth/login`.
-* **Quality Gates (Pre-commit):**
-* Formatter & Linter: `pnpm biome check --write` (0 errors/warnings).
-* Type Safety: `pnpm tsc --noEmit` (0 errors).
+* **Quality Gates (Pre-commit & CI):**
+  * Formatter & Linter: `pnpm biome check --write` (0 errors, 0 warnings).
+  * Type Safety: `pnpm tsc --noEmit` (0 errors).
+  * Automated E2E Testing: `pnpm test:e2e` (100% test pass).
+  * Regression Prevention Rule: Mọi tính năng, màn hình giao diện, hoặc luồng xác thực mới bắt buộc phải đi kèm kiểm thử hồi quy tự động (Playwright E2E test specs). Tuyệt đối không bàn giao mã nguồn hoặc mở Pull Request khi chưa có kiểm thử tự động xanh.
+  * CI Protection: Mọi Pull Request đều phải vượt qua toàn bộ các bước kiểm thử tự động trên GitHub Actions runner trước khi được phép merge vào `main`.

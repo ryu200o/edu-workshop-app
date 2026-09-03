@@ -1,4 +1,5 @@
 const REFRESH_TOKEN_KEY = "edu_refresh_token";
+const ACCESS_TOKEN_KEY = "edu_access_token";
 
 let inMemoryAccessToken: string | null = null;
 
@@ -7,11 +8,27 @@ const sessionExpiredListeners: Set<SessionExpiredListener> = new Set();
 
 export const tokenManager = {
   getAccessToken(): string | null {
-    return inMemoryAccessToken;
+    if (inMemoryAccessToken) {
+      return inMemoryAccessToken;
+    }
+    try {
+      return localStorage.getItem(ACCESS_TOKEN_KEY);
+    } catch {
+      return null;
+    }
   },
 
   setAccessToken(token: string | null): void {
     inMemoryAccessToken = token;
+    try {
+      if (token) {
+        localStorage.setItem(ACCESS_TOKEN_KEY, token);
+      } else {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+      }
+    } catch {
+      // Ignore
+    }
   },
 
   getRefreshToken(): string | null {
@@ -47,6 +64,7 @@ export const tokenManager = {
     inMemoryAccessToken = null;
     try {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
     } catch {
       // Ignore
     }

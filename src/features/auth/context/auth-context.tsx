@@ -23,11 +23,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // App Bootstrap: Silent refresh if refreshToken exists in storage
+  // App Bootstrap: Restore session using cached accessToken or silent refresh
   useEffect(() => {
     let isMounted = true;
 
     async function bootstrapAuth() {
+      // 1. Try restoring session directly if valid accessToken is available in storage
+      const cachedAccessToken = tokenManager.getAccessToken();
+      if (cachedAccessToken) {
+        try {
+          const profile = await authApi.getMe();
+          if (isMounted) {
+            setUser(profile);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+          }
+          return;
+        } catch {
+          // Cached access token might be invalid or expired; proceed to refresh
+        }
+      }
+
+      // 2. Otherwise fall back to silent refresh using refreshToken
       const refreshToken = tokenManager.getRefreshToken();
       if (!refreshToken) {
         if (isMounted) {
@@ -86,7 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (payload: LoginRequest): Promise<AuthTokenResponse> => {
-      setIsLoading(true);
       try {
         const tokenResponse = await authApi.login(payload);
         if (tokenResponse.accessToken && tokenResponse.refreshToken) {
@@ -106,8 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setIsAuthenticated(false);
         throw err;
-      } finally {
-        setIsLoading(false);
       }
     },
     [],

@@ -1,5 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import {
   AlertCircle,
   Eye,
@@ -17,7 +21,6 @@ import {
   type LoginFormValues,
   loginFormSchema,
 } from "@/features/auth/types/schemas";
-import type { ApiErrorResponse } from "@/shared/api/client";
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -43,6 +46,7 @@ function getSafeRedirect(target?: string): string {
 function LoginPage() {
   const { redirect: redirectParam } = Route.useSearch();
   const navigate = useNavigate();
+  const router = useRouter();
   const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -69,24 +73,28 @@ function LoginPage() {
 
     try {
       await login(values);
+      await router.invalidate();
       const safePath = getSafeRedirect(redirectParam);
       navigate({ to: safePath });
-    } catch (err) {
-      const apiErr = err as ApiErrorResponse;
-      const problem = apiErr?.problem;
+    } catch (err: unknown) {
+      const errObj =
+        typeof err === "object" && err !== null
+          ? (err as Record<string, unknown>)
+          : {};
+      const problem = (errObj.problem ||
+        (errObj.response as Record<string, unknown> | undefined)?.data ||
+        errObj) as Record<string, unknown> | undefined;
 
-      if (problem) {
-        setErrorMessage(
-          problem.detail || problem.title || "Đăng nhập thất bại.",
-        );
-        if (problem.errors && Array.isArray(problem.errors)) {
-          setFieldErrors(problem.errors);
-        }
-      } else {
-        setErrorMessage(
-          (err as Error)?.message ||
-            "Không thể kết nối đến máy chủ. Vui lòng thử lại.",
-        );
+      const msg =
+        (problem?.detail as string | undefined) ||
+        (problem?.title as string | undefined) ||
+        (problem?.message as string | undefined) ||
+        (err as Error)?.message ||
+        "Đăng nhập thất bại.";
+
+      setErrorMessage(msg);
+      if (problem?.errors && Array.isArray(problem.errors)) {
+        setFieldErrors(problem.errors);
       }
     }
   };
