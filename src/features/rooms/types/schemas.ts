@@ -95,6 +95,7 @@ export const roomSearchParamsSchema = z.object({
   status: z.enum(["ACTIVE", "MAINTENANCE", "DEACTIVATED"]).optional(),
   minCapacity: z.coerce.number().int().positive().optional(),
   maxCapacity: z.coerce.number().int().positive().optional(),
+  view: z.enum(["table", "grid"]).optional(),
 });
 
 export type RoomSearchParams = z.infer<typeof roomSearchParamsSchema>;
