@@ -46,7 +46,7 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex h-screen w-full max-w-full overflow-hidden bg-background text-foreground">
       {/* Desktop Sidebar */}
       <Sidebar className="hidden shrink-0 md:flex" />
 
