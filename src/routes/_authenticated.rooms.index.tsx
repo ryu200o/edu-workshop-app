@@ -1,11 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Building, CheckCircle2, DoorOpen, Plus, Wrench } from "lucide-react";
+import {
+  Building,
+  CheckCircle2,
+  DoorOpen,
+  LayoutGrid,
+  Plus,
+  Table2,
+  Wrench,
+} from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { CreateRoomDialog } from "@/features/rooms/components/create-room-dialog";
 import { EditRoomDialog } from "@/features/rooms/components/edit-room-dialog";
 import { RoomDetailModal } from "@/features/rooms/components/room-detail-modal";
 import { RoomFilterBar } from "@/features/rooms/components/room-filter-bar";
+import { RoomGrid } from "@/features/rooms/components/room-grid";
 import { RoomPagination } from "@/features/rooms/components/room-pagination";
 import { RoomStatusDialog } from "@/features/rooms/components/room-status-dialog";
 import { RoomTable } from "@/features/rooms/components/room-table";
@@ -96,6 +105,18 @@ function RoomsManagementPage() {
         size: newSize,
         page: 1,
       }),
+    });
+  };
+
+  const currentView = searchParams.view || "table";
+
+  const handleViewChange = (newView: "table" | "grid") => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        view: newView,
+      }),
+      replace: true,
     });
   };
 
@@ -196,18 +217,76 @@ function RoomsManagementPage() {
         onReset={handleResetFilters}
       />
 
-      {/* Data Table */}
-      <RoomTable
-        rooms={roomsPage?.content || []}
-        isLoading={isLoading}
-        onViewDetail={(room) => setDetailRoomId(room.id)}
-        onEditRoom={(room) => setEditRoom(room)}
-        onScheduleMaintenance={(room) => setScheduleRoom(room)}
-        onChangeStatus={(room, status) => {
-          setStatusRoom(room);
-          setTargetStatus(status);
-        }}
-      />
+      {/* View Switcher & Counter Toolbar */}
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-muted-foreground text-xs sm:text-sm">
+          Hiển thị{" "}
+          <span className="font-semibold text-foreground">
+            {roomsPage?.content?.length ?? 0}
+          </span>{" "}
+          trên tổng số{" "}
+          <span className="font-semibold text-foreground">
+            {roomsPage?.totalElements ?? 0}
+          </span>{" "}
+          phòng học
+        </p>
+
+        <div className="flex items-center rounded-xl border border-border bg-muted/40 p-1 shadow-2xs">
+          <Button
+            variant={currentView === "table" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => handleViewChange("table")}
+            className={`h-7 gap-1.5 px-2.5 text-xs font-medium ${
+              currentView === "table"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Table2 className="h-3.5 w-3.5" />
+            <span>Dạng Bảng</span>
+          </Button>
+          <Button
+            variant={currentView === "grid" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => handleViewChange("grid")}
+            className={`h-7 gap-1.5 px-2.5 text-xs font-medium ${
+              currentView === "grid"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            <span>Dạng Lưới</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Data Table / Grid View */}
+      {currentView === "grid" ? (
+        <RoomGrid
+          rooms={roomsPage?.content || []}
+          isLoading={isLoading}
+          onViewDetail={(room) => setDetailRoomId(room.id)}
+          onEditRoom={(room) => setEditRoom(room)}
+          onScheduleMaintenance={(room) => setScheduleRoom(room)}
+          onChangeStatus={(room, status) => {
+            setStatusRoom(room);
+            setTargetStatus(status);
+          }}
+        />
+      ) : (
+        <RoomTable
+          rooms={roomsPage?.content || []}
+          isLoading={isLoading}
+          onViewDetail={(room) => setDetailRoomId(room.id)}
+          onEditRoom={(room) => setEditRoom(room)}
+          onScheduleMaintenance={(room) => setScheduleRoom(room)}
+          onChangeStatus={(room, status) => {
+            setStatusRoom(room);
+            setTargetStatus(status);
+          }}
+        />
+      )}
 
       {/* Pagination */}
       {roomsPage && roomsPage.totalElements > 0 && (
