@@ -69,6 +69,7 @@ export interface RoomFilterParams {
   status?: RoomStatus;
   minCapacity?: number;
   maxCapacity?: number;
+  view?: "table" | "grid";
 }
 
 export interface CreateRoomRequest {
