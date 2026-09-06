@@ -10,6 +10,7 @@ import type {
   RoomFilterParams,
   RoomSummaryView,
   ScheduleMaintenanceRequest,
+  UpdateRoomProfileRequest,
 } from "@/features/rooms/types";
 import { apiClient } from "@/shared/api/client";
 
@@ -67,10 +68,24 @@ export const roomsApi = {
     });
   },
 
+  updateRoomProfile: async (
+    id: string,
+    payload: UpdateRoomProfileRequest,
+    version: number,
+  ): Promise<void> => {
+    await apiClient.put(`/v1/rooms/${id}`, payload, {
+      headers: {
+        "If-Match": `"${version}"`,
+      },
+    });
+  },
+
+  /** @deprecated Abolished in PR #93, use updateRoomProfile */
   renameRoom: async (id: string, payload: RenameRoomRequest): Promise<void> => {
     await apiClient.put(`/v1/rooms/${id}/rename`, payload);
   },
 
+  /** @deprecated Abolished in PR #93, use updateRoomProfile */
   relocateRoom: async (
     id: string,
     payload: RelocateRoomRequest,
@@ -78,6 +93,7 @@ export const roomsApi = {
     await apiClient.put(`/v1/rooms/${id}/relocate`, payload);
   },
 
+  /** @deprecated Abolished in PR #93, use updateRoomProfile */
   changeRoomCode: async (
     id: string,
     payload: ChangeRoomCodeRequest,
@@ -85,6 +101,7 @@ export const roomsApi = {
     await apiClient.put(`/v1/rooms/${id}/code`, payload);
   },
 
+  /** @deprecated Abolished in PR #93, use updateRoomProfile */
   changeRoomCapacity: async (
     id: string,
     payload: ChangeRoomCapacityRequest,
@@ -96,23 +113,36 @@ export const roomsApi = {
     await apiClient.post(`/v1/rooms/${id}/maintenance`);
   },
 
-  reactivateRoom: async (id: string): Promise<void> => {
-    await apiClient.post(`/v1/rooms/${id}/reactivate`);
+  reactivateRoom: async (id: string, version?: number): Promise<void> => {
+    const headers: Record<string, string> = {};
+    if (version !== undefined) {
+      headers["If-Match"] = `"${version}"`;
+    }
+    await apiClient.post(`/v1/rooms/${id}/reactivate`, null, { headers });
   },
 
-  deactivateRoom: async (id: string): Promise<void> => {
-    await apiClient.post(`/v1/rooms/${id}/deactivate`);
+  deactivateRoom: async (id: string, version?: number): Promise<void> => {
+    const headers: Record<string, string> = {};
+    if (version !== undefined) {
+      headers["If-Match"] = `"${version}"`;
+    }
+    await apiClient.post(`/v1/rooms/${id}/deactivate`, null, { headers });
   },
 
   scheduleMaintenance: async (
     id: string,
     payload: ScheduleMaintenanceRequest,
     idempotencyKey: string,
+    version?: number,
   ): Promise<void> => {
+    const headers: Record<string, string> = {
+      "Idempotency-Key": idempotencyKey,
+    };
+    if (version !== undefined) {
+      headers["If-Match"] = `"${version}"`;
+    }
     await apiClient.post(`/v1/rooms/${id}/maintenance-schedules`, payload, {
-      headers: {
-        "Idempotency-Key": idempotencyKey,
-      },
+      headers,
     });
   },
 };

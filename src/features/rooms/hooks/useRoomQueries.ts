@@ -1,9 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { roomsApi } from "@/features/rooms/api/rooms.api";
 import type {
   CreateRoomRequest,
+  RoomDetailView,
   RoomFilterParams,
   ScheduleMaintenanceRequest,
+  UpdateRoomProfileRequest,
 } from "@/features/rooms/types";
 
 export const ROOM_QUERY_KEYS = {
@@ -46,6 +53,20 @@ export function useBuildingsQuery() {
   });
 }
 
+/**
+ * Silent refetch for in-place conflict reconciliation.
+ * Fetches directly via roomsApi to bypass any stale TanStack Query RAM cache,
+ * then updates the Query cache with the fresh RoomDetailView.
+ */
+export async function fetchLatestRoomDetail(
+  queryClient: QueryClient,
+  id: string,
+): Promise<RoomDetailView> {
+  const freshData = await roomsApi.getRoomById(id);
+  queryClient.setQueryData(ROOM_QUERY_KEYS.detail(id), freshData);
+  return freshData;
+}
+
 export function useCreateRoomMutation() {
   const queryClient = useQueryClient();
 
@@ -59,6 +80,27 @@ export function useCreateRoomMutation() {
     }) => roomsApi.createRoom(payload, idempotencyKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROOM_QUERY_KEYS.all });
+    },
+  });
+}
+
+export interface UpdateRoomProfileVariables {
+  id: string;
+  payload: UpdateRoomProfileRequest;
+  version: number;
+}
+
+export function useUpdateRoomProfileMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload, version }: UpdateRoomProfileVariables) =>
+      roomsApi.updateRoomProfile(id, payload, version),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ROOM_QUERY_KEYS.all });
+      queryClient.invalidateQueries({
+        queryKey: ROOM_QUERY_KEYS.detail(variables.id),
+      });
     },
   });
 }
@@ -79,39 +121,26 @@ export interface UpdateRoomVariables {
     code: number;
     capacity: number;
   };
+  version?: number;
 }
 
+/** @deprecated Use useUpdateRoomProfileMutation instead */
 export function useUpdateRoomMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, original, newValues }: UpdateRoomVariables) => {
-      // Crucial: Execute sequentially to prevent ObjectOptimisticLockingFailureException
-      // on backend version column (409 Conflict)
-
-      if (newValues.name !== original.name) {
-        await roomsApi.renameRoom(id, { newName: newValues.name });
-      }
-
-      if (
-        newValues.building !== original.building ||
-        newValues.floor !== original.floor
-      ) {
-        await roomsApi.relocateRoom(id, {
-          newBuilding: newValues.building,
-          newFloor: newValues.floor,
-        });
-      }
-
-      if (Number(newValues.code) !== Number(original.code)) {
-        await roomsApi.changeRoomCode(id, { newCode: newValues.code });
-      }
-
-      if (newValues.capacity !== original.capacity) {
-        await roomsApi.changeRoomCapacity(id, {
-          newCapacity: newValues.capacity,
-        });
-      }
+    mutationFn: async ({ id, newValues, version = 0 }: UpdateRoomVariables) => {
+      await roomsApi.updateRoomProfile(
+        id,
+        {
+          name: newValues.name,
+          building: newValues.building,
+          floor: newValues.floor,
+          code: newValues.code,
+          capacity: newValues.capacity,
+        },
+        version,
+      );
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ROOM_QUERY_KEYS.all });
@@ -129,16 +158,18 @@ export function useRoomStatusMutation() {
     mutationFn: async ({
       id,
       targetStatus,
+      version,
     }: {
       id: string;
       targetStatus: "ACTIVE" | "MAINTENANCE" | "DEACTIVATED";
+      version?: number;
     }) => {
       if (targetStatus === "MAINTENANCE") {
         await roomsApi.placeUnderMaintenance(id);
       } else if (targetStatus === "ACTIVE") {
-        await roomsApi.reactivateRoom(id);
+        await roomsApi.reactivateRoom(id, version);
       } else if (targetStatus === "DEACTIVATED") {
-        await roomsApi.deactivateRoom(id);
+        await roomsApi.deactivateRoom(id, version);
       }
     },
     onSuccess: (_data, variables) => {
@@ -158,11 +189,13 @@ export function useScheduleMaintenanceMutation() {
       id,
       payload,
       idempotencyKey,
+      version,
     }: {
       id: string;
       payload: ScheduleMaintenanceRequest;
       idempotencyKey: string;
-    }) => roomsApi.scheduleMaintenance(id, payload, idempotencyKey),
+      version?: number;
+    }) => roomsApi.scheduleMaintenance(id, payload, idempotencyKey, version),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ROOM_QUERY_KEYS.all });
       queryClient.invalidateQueries({
