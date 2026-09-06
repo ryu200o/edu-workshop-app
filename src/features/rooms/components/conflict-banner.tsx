@@ -52,14 +52,10 @@ export function ConflictBanner({
 }: ConflictBannerProps) {
   const auth = useAuth();
   const activeUserEmail = currentUserEmail ?? auth?.user?.email;
-  const actorEmail =
-    serverData.updatedBy?.email ||
-    serverData.updatedBy?.identifier ||
-    "Quản trị viên";
+  const actorEmail = serverData.updatedBy?.identifier || "Quản trị viên";
   const isSameUser =
     Boolean(activeUserEmail) &&
-    (serverData.updatedBy?.email === activeUserEmail ||
-      serverData.updatedBy?.identifier === activeUserEmail);
+    serverData.updatedBy?.identifier === activeUserEmail;
   const formattedTime = formatTime(serverData.updatedAt);
 
   // Map server fields to matching form value types

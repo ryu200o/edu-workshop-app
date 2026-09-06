@@ -3,8 +3,6 @@ export type RoomStatus = "ACTIVE" | "MAINTENANCE" | "DEACTIVATED";
 export interface AuditActor {
   userId: string | null;
   identifier: string;
-  email?: string;
-  displayName?: string;
   roles: string[];
 }
 
