@@ -135,7 +135,7 @@ export function EditRoomDialog({
             baseValues: baseValuesRef.current,
           });
           toast.warning(
-            "Phòng học vừa được cập nhật bởi quản trị viên khác. Vui lòng xem bảng hòa giải xung đột.",
+            "Phòng học vừa được cập nhật từ một phiên làm việc khác. Vui lòng xem bảng hòa giải xung đột.",
           );
         } catch {
           toast.error(

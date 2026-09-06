@@ -3,6 +3,8 @@ export type RoomStatus = "ACTIVE" | "MAINTENANCE" | "DEACTIVATED";
 export interface AuditActor {
   userId: string | null;
   identifier: string;
+  email?: string;
+  displayName?: string;
   roles: string[];
 }
 
@@ -91,27 +93,6 @@ export interface UpdateRoomProfileRequest {
 }
 
 export type UpdateRoomProfilePayload = UpdateRoomProfileRequest;
-
-/** @deprecated Abolished in PR #93, replaced by UpdateRoomProfileRequest */
-export interface RenameRoomRequest {
-  newName: string;
-}
-
-/** @deprecated Abolished in PR #93, replaced by UpdateRoomProfileRequest */
-export interface RelocateRoomRequest {
-  newBuilding: string;
-  newFloor: number;
-}
-
-/** @deprecated Abolished in PR #93, replaced by UpdateRoomProfileRequest */
-export interface ChangeRoomCodeRequest {
-  newCode: number;
-}
-
-/** @deprecated Abolished in PR #93, replaced by UpdateRoomProfileRequest */
-export interface ChangeRoomCapacityRequest {
-  newCapacity: number;
-}
 
 export interface ScheduleMaintenanceRequest {
   startTime: string;

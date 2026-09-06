@@ -61,12 +61,13 @@ test.describe("Room Optimistic Concurrency Control (OCC) & In-Place Reconciliati
     // 1. Form inputs are strictly preserved (name input is NOT wiped)
     await expect(nameInput2).toHaveValue("Phòng Lab STEM Đột Phá");
 
-    // 2. Amber ConflictBanner appears
+    // 2. Amber ConflictBanner appears with session audit information
     const banner2 = page2.getByTestId("conflict-banner");
     await expect(banner2).toBeVisible({ timeout: 10000 });
     await expect(
       page2.getByText(/Phát Hiện Xung Đột Phiên Bản Dữ Liệu \(HTTP 412\)/i),
     ).toBeVisible();
+    await expect(page2.getByText(/phiên làm việc khác của bạn/i)).toBeVisible();
 
     // 3. Non-colliding drift from Tab 1 (Capacity = 75) is highlighted
     await expect(
@@ -127,6 +128,7 @@ test.describe("Room Optimistic Concurrency Control (OCC) & In-Place Reconciliati
     // Tab 2 gets 412 and displays direct collision diff
     const banner = page2.getByTestId("conflict-banner");
     await expect(banner).toBeVisible({ timeout: 10000 });
+    await expect(page2.getByText(/phiên làm việc khác của bạn/i)).toBeVisible();
     await expect(page2.getByTestId("direct-collision-capacity")).toBeVisible();
     await expect(page2.getByText("80 (Máy chủ)")).toBeVisible();
     await expect(page2.getByText("Bạn đang nhập: 90")).toBeVisible();

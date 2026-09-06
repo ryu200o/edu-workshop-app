@@ -105,52 +105,6 @@ export function useUpdateRoomProfileMutation() {
   });
 }
 
-export interface UpdateRoomVariables {
-  id: string;
-  original: {
-    name: string;
-    building: string;
-    floor: number;
-    code: number | string;
-    capacity: number;
-  };
-  newValues: {
-    name: string;
-    building: string;
-    floor: number;
-    code: number;
-    capacity: number;
-  };
-  version?: number;
-}
-
-/** @deprecated Use useUpdateRoomProfileMutation instead */
-export function useUpdateRoomMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, newValues, version = 0 }: UpdateRoomVariables) => {
-      await roomsApi.updateRoomProfile(
-        id,
-        {
-          name: newValues.name,
-          building: newValues.building,
-          floor: newValues.floor,
-          code: newValues.code,
-          capacity: newValues.capacity,
-        },
-        version,
-      );
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ROOM_QUERY_KEYS.all });
-      queryClient.invalidateQueries({
-        queryKey: ROOM_QUERY_KEYS.detail(variables.id),
-      });
-    },
-  });
-}
-
 export function useRoomStatusMutation() {
   const queryClient = useQueryClient();
 

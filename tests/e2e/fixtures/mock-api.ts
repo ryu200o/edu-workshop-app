@@ -325,6 +325,12 @@ export async function setupMockApi(page: Page) {
           code: body.code,
           capacity: body.capacity,
           version: simulatedRoomState.version + 1,
+          updatedBy: {
+            userId: "00000000-0000-0000-0000-000000000001",
+            identifier: "admin@eduworkshop.local",
+            roles: ["ADMIN"],
+          },
+          updatedAt: new Date().toISOString(),
         };
 
         await route.fulfill({

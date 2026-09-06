@@ -5,6 +5,7 @@ import {
   Loader2,
   RotateCcw,
 } from "lucide-react";
+import { useAuth } from "@/features/auth/context/auth-context";
 import type { RoomDetailView } from "@/features/rooms/types";
 import type { EditRoomFormValues } from "@/features/rooms/types/schemas";
 import { Button } from "@/shared/components/ui/button";
@@ -17,6 +18,7 @@ interface ConflictBannerProps {
   onDiscardAndSync: () => void;
   onForceOverwrite: () => void;
   isSubmitting: boolean;
+  currentUserEmail?: string;
 }
 
 const FIELD_LABELS: Record<keyof EditRoomFormValues, string> = {
@@ -27,6 +29,17 @@ const FIELD_LABELS: Record<keyof EditRoomFormValues, string> = {
   capacity: "Sức chứa",
 };
 
+function formatTime(dateString?: string): string {
+  if (!dateString) return "vừa xong";
+  try {
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return dateString;
+    return d.toLocaleString("vi-VN");
+  } catch {
+    return dateString;
+  }
+}
+
 export function ConflictBanner({
   serverData,
   baseValues,
@@ -35,7 +48,20 @@ export function ConflictBanner({
   onDiscardAndSync,
   onForceOverwrite,
   isSubmitting,
+  currentUserEmail,
 }: ConflictBannerProps) {
+  const auth = useAuth();
+  const activeUserEmail = currentUserEmail ?? auth?.user?.email;
+  const actorEmail =
+    serverData.updatedBy?.email ||
+    serverData.updatedBy?.identifier ||
+    "Quản trị viên";
+  const isSameUser =
+    Boolean(activeUserEmail) &&
+    (serverData.updatedBy?.email === activeUserEmail ||
+      serverData.updatedBy?.identifier === activeUserEmail);
+  const formattedTime = formatTime(serverData.updatedAt);
+
   // Map server fields to matching form value types
   const serverFormValues: EditRoomFormValues = {
     name: serverData.name,
@@ -79,9 +105,23 @@ export function ConflictBanner({
             Phát Hiện Xung Đột Phiên Bản Dữ Liệu (HTTP 412)
           </h4>
           <p className="text-xs leading-relaxed text-amber-800/90 dark:text-amber-300/90">
-            Thông tin phòng học này vừa được quản trị viên khác cập nhật lên
-            phiên bản #{serverData.version}. Dữ liệu bạn đang nhập dở bên dưới
-            được giữ nguyên vẹn.
+            {isSameUser ? (
+              <>
+                Dữ liệu phòng vừa được cập nhật từ một{" "}
+                <strong>phiên làm việc khác của bạn</strong> (ví dụ: một tab
+                trình duyệt khác) vào lúc {formattedTime} (phiên bản #
+                {serverData.version}). Dữ liệu bạn đang nhập dở bên dưới được
+                giữ nguyên vẹn.
+              </>
+            ) : (
+              <>
+                Dữ liệu phòng vừa được cập nhật từ một{" "}
+                <strong>phiên làm việc khác</strong> bởi{" "}
+                <strong>{actorEmail}</strong> vào lúc {formattedTime} (phiên bản
+                #{serverData.version}). Dữ liệu bạn đang nhập dở bên dưới được
+                giữ nguyên vẹn.
+              </>
+            )}
           </p>
         </div>
       </div>

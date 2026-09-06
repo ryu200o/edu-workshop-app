@@ -1,11 +1,7 @@
 import type {
   BuildingMetadataView,
-  ChangeRoomCapacityRequest,
-  ChangeRoomCodeRequest,
   CreateRoomRequest,
   PageEnvelope,
-  RelocateRoomRequest,
-  RenameRoomRequest,
   RoomDetailView,
   RoomFilterParams,
   RoomSummaryView,
@@ -78,35 +74,6 @@ export const roomsApi = {
         "If-Match": `"${version}"`,
       },
     });
-  },
-
-  /** @deprecated Abolished in PR #93, use updateRoomProfile */
-  renameRoom: async (id: string, payload: RenameRoomRequest): Promise<void> => {
-    await apiClient.put(`/v1/rooms/${id}/rename`, payload);
-  },
-
-  /** @deprecated Abolished in PR #93, use updateRoomProfile */
-  relocateRoom: async (
-    id: string,
-    payload: RelocateRoomRequest,
-  ): Promise<void> => {
-    await apiClient.put(`/v1/rooms/${id}/relocate`, payload);
-  },
-
-  /** @deprecated Abolished in PR #93, use updateRoomProfile */
-  changeRoomCode: async (
-    id: string,
-    payload: ChangeRoomCodeRequest,
-  ): Promise<void> => {
-    await apiClient.put(`/v1/rooms/${id}/code`, payload);
-  },
-
-  /** @deprecated Abolished in PR #93, use updateRoomProfile */
-  changeRoomCapacity: async (
-    id: string,
-    payload: ChangeRoomCapacityRequest,
-  ): Promise<void> => {
-    await apiClient.put(`/v1/rooms/${id}/capacity`, payload);
   },
 
   placeUnderMaintenance: async (id: string): Promise<void> => {
