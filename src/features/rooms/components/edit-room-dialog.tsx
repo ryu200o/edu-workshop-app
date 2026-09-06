@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { isAxiosError } from "axios";
 import { AlertCircle, Edit3, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -96,41 +96,61 @@ export function EditRoomDialog({
     }
   }, [room, open, reset]);
 
-  const handleSubmissionError = (err: unknown) => {
-    if (err instanceof AxiosError && err.response) {
-      const status = err.response.status;
-      const problem = err.response.data || {};
+  const handleSubmissionError = async (err: unknown) => {
+    let status: number | undefined;
+    let problem: Record<string, unknown> = {};
 
+    if (
+      err &&
+      typeof err === "object" &&
+      "status" in err &&
+      typeof (err as { status: unknown }).status === "number"
+    ) {
+      const apiErr = err as {
+        status: number;
+        problem?: Record<string, unknown>;
+      };
+      status = apiErr.status;
+      problem = apiErr.problem || {};
+    } else if (isAxiosError(err) && err.response) {
+      status = err.response.status;
+      problem = (err.response.data as Record<string, unknown>) || {};
+    }
+
+    if (status !== undefined) {
       // 1. HTTP 412 Precondition Failed: Trigger In-Place Reconciliation
       if (status === 412) {
         if (!room) return;
 
         // Perform silent refetch directly from server to avoid stale query cache
-        fetchLatestRoomDetail(queryClient, room.id)
-          .then((freshServerData) => {
-            // Tactical caveat #3: update currentVersion to fresh version
-            setCurrentVersion(freshServerData.version);
-            setConflictState({
-              serverData: freshServerData,
-              baseValues: baseValuesRef.current,
-            });
-            toast.warning(
-              "Phòng học vừa được cập nhật bởi quản trị viên khác. Vui lòng xem bảng hòa giải xung đột.",
-            );
-          })
-          .catch(() => {
-            toast.error(
-              "Không thể tải dữ liệu phiên bản mới từ máy chủ. Vui lòng thử lại.",
-            );
+        try {
+          const freshServerData = await fetchLatestRoomDetail(
+            queryClient,
+            room.id,
+          );
+          // Tactical caveat #3: update currentVersion to fresh version
+          setCurrentVersion(freshServerData.version);
+          setConflictState({
+            serverData: freshServerData,
+            baseValues: baseValuesRef.current,
           });
+          toast.warning(
+            "Phòng học vừa được cập nhật bởi quản trị viên khác. Vui lòng xem bảng hòa giải xung đột.",
+          );
+        } catch {
+          toast.error(
+            "Không thể tải dữ liệu phiên bản mới từ máy chủ. Vui lòng thử lại.",
+          );
+        }
         return;
       }
 
       // 2. HTTP 409 Conflict: Business Uniqueness Violation (Duplicate Name or Code)
       if (status === 409) {
-        const code = problem.code || "";
-        const detail =
-          problem.detail || problem.title || "Dữ liệu bị trùng lặp.";
+        const code = String(problem.code || "");
+        const detail = String(
+          problem.detail || problem.title || "Dữ liệu bị trùng lặp.",
+        );
 
         // Tactical caveat #2: Match exact code identifier first
         if (code === "DUPLICATE_ROOM_NAME" || /tên phòng/i.test(detail)) {
@@ -167,10 +187,11 @@ export function EditRoomDialog({
       }
 
       // 4. Other problem details (400, 500, etc.)
-      const fallbackMsg =
+      const fallbackMsg = String(
         problem.detail ||
-        problem.title ||
-        "Không thể cập nhật thông tin phòng học.";
+          problem.title ||
+          "Không thể cập nhật thông tin phòng học.",
+      );
       setGeneralError(fallbackMsg);
       toast.error(fallbackMsg);
     } else {

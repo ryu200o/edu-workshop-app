@@ -1,5 +1,61 @@
 import type { Page, Route } from "@playwright/test";
 
+let simulatedRoomState = {
+  id: "room-01",
+  name: "Phòng Lab A2-401",
+  building: "TOA-A",
+  floor: 4,
+  code: 401,
+  capacity: 50,
+  state: "ACTIVE" as const,
+  version: 0,
+  currentMaintenanceSchedule: null,
+  createdBy: {
+    userId: "00000000-0000-0000-0000-000000000001",
+    identifier: "admin@eduworkshop.local",
+    roles: ["ADMIN"],
+  },
+  updatedBy: {
+    userId: "00000000-0000-0000-0000-000000000001",
+    identifier: "admin@eduworkshop.local",
+    roles: ["ADMIN"],
+  },
+  createdAt: "2026-08-20T08:00:00Z",
+  updatedAt: "2026-08-25T14:30:00Z",
+  maintenanceSchedules: [],
+};
+
+export function resetSimulatedRoomState() {
+  simulatedRoomState = {
+    id: "room-01",
+    name: "Phòng Lab A2-401",
+    building: "TOA-A",
+    floor: 4,
+    code: 401,
+    capacity: 50,
+    state: "ACTIVE",
+    version: 0,
+    currentMaintenanceSchedule: null,
+    createdBy: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      identifier: "admin@eduworkshop.local",
+      roles: ["ADMIN"],
+    },
+    updatedBy: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      identifier: "admin@eduworkshop.local",
+      roles: ["ADMIN"],
+    },
+    createdAt: "2026-08-20T08:00:00Z",
+    updatedAt: "2026-08-25T14:30:00Z",
+    maintenanceSchedules: [],
+  };
+}
+
+export function getSimulatedRoomState() {
+  return simulatedRoomState;
+}
+
 export async function setupMockApi(page: Page) {
   // Mock POST /api/v1/iam/auth/login
   await page.route("**/api/v1/iam/auth/login", async (route: Route) => {
@@ -103,15 +159,16 @@ export async function setupMockApi(page: Page) {
 
     const allRooms = [
       {
-        id: "room-01",
-        name: "Phòng Lab A2-401",
-        building: "TOA-A",
-        floor: 4,
-        code: 401,
-        capacity: 50,
-        state: "ACTIVE",
+        id: simulatedRoomState.id,
+        name: simulatedRoomState.name,
+        building: simulatedRoomState.building,
+        floor: simulatedRoomState.floor,
+        code: simulatedRoomState.code,
+        capacity: simulatedRoomState.capacity,
+        state: simulatedRoomState.state,
+        version: simulatedRoomState.version,
         currentMaintenanceSchedule: null,
-        createdAt: "2026-08-20T08:00:00Z",
+        createdAt: simulatedRoomState.createdAt,
       },
       {
         id: "room-02",
@@ -121,6 +178,7 @@ export async function setupMockApi(page: Page) {
         code: 101,
         capacity: 120,
         state: "ACTIVE",
+        version: 0,
         currentMaintenanceSchedule: null,
         createdAt: "2026-08-21T08:00:00Z",
       },
@@ -132,6 +190,7 @@ export async function setupMockApi(page: Page) {
         code: 205,
         capacity: 35,
         state: "MAINTENANCE",
+        version: 0,
         currentMaintenanceSchedule: {
           id: "maint-1",
           startTime: "2026-09-01T08:00:00Z",
@@ -148,6 +207,7 @@ export async function setupMockApi(page: Page) {
         code: 901,
         capacity: 40,
         state: "ACTIVE",
+        version: 0,
         currentMaintenanceSchedule: null,
         createdAt: "2026-08-23T08:00:00Z",
       },
@@ -180,41 +240,109 @@ export async function setupMockApi(page: Page) {
     });
   });
 
-  // Mock GET /api/v1/rooms/:id (Detail Modal)
+  // Mock PUT /api/v1/rooms/:id (Atomic Composite Update with If-Match)
   await page.route(
     /.*\/api\/v1\/rooms\/[a-zA-Z0-9_-]+$/,
     async (route: Route) => {
+      const request = route.request();
+      if (request.method() === "PUT") {
+        const ifMatch = await request.headerValue("if-match");
+
+        // Missing If-Match -> 428 Precondition Required
+        if (!ifMatch) {
+          await route.fulfill({
+            status: 428,
+            contentType: "application/problem+json",
+            body: JSON.stringify({
+              type: "https://errors.eduworkshop.local/precondition-required",
+              title: "Precondition Required",
+              status: 428,
+              code: "PRECONDITION_REQUIRED",
+              detail: "If-Match header is required for conditional update.",
+            }),
+          });
+          return;
+        }
+
+        const cleanVersion = ifMatch.replace(/["']/g, "").trim();
+
+        // OCC Mismatch -> 412 Precondition Failed
+        if (cleanVersion !== String(simulatedRoomState.version)) {
+          await route.fulfill({
+            status: 412,
+            contentType: "application/problem+json",
+            body: JSON.stringify({
+              type: "https://errors.eduworkshop.local/optimistic-lock-failed",
+              title: "Precondition Failed",
+              status: 412,
+              code: "OPTIMISTIC_LOCK_FAILED",
+              detail:
+                "Phòng học đã được cập nhật bởi một phiên làm việc khác. Dữ liệu của bạn không còn đồng bộ.",
+            }),
+          });
+          return;
+        }
+
+        const body = request.postDataJSON();
+
+        // 409 Business Uniqueness Conflict Simulation
+        if (body?.name === "DUPLICATE_NAME") {
+          await route.fulfill({
+            status: 409,
+            contentType: "application/problem+json",
+            body: JSON.stringify({
+              type: "https://errors.eduworkshop.local/duplicate-name",
+              title: "Conflict",
+              status: 409,
+              code: "DUPLICATE_ROOM_NAME",
+              detail: "Tên phòng học này đã tồn tại trong cơ sở dữ liệu.",
+            }),
+          });
+          return;
+        }
+
+        if (body?.code === 9999) {
+          await route.fulfill({
+            status: 409,
+            contentType: "application/problem+json",
+            body: JSON.stringify({
+              type: "https://errors.eduworkshop.local/duplicate-code",
+              title: "Conflict",
+              status: 409,
+              code: "DUPLICATE_ROOM_CODE",
+              detail: "Mã phòng học đã được sử dụng tại tầng này.",
+            }),
+          });
+          return;
+        }
+
+        // Successful update -> mutate state, increment version, return 204 No Content
+        simulatedRoomState = {
+          ...simulatedRoomState,
+          name: body.name,
+          building: body.building,
+          floor: body.floor,
+          code: body.code,
+          capacity: body.capacity,
+          version: simulatedRoomState.version + 1,
+        };
+
+        await route.fulfill({
+          status: 204,
+        });
+        return;
+      }
+
       // Avoid matching sub-endpoints
-      if (route.request().url().endsWith("/buildings")) {
+      if (request.url().endsWith("/buildings")) {
         return route.continue();
       }
 
+      // Mock GET /api/v1/rooms/:id (Detail / Refetch)
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
-          id: "room-01",
-          name: "Phòng Lab A2-401",
-          building: "TOA-A",
-          floor: 4,
-          code: 401,
-          capacity: 50,
-          state: "ACTIVE",
-          currentMaintenanceSchedule: null,
-          createdBy: {
-            userId: "00000000-0000-0000-0000-000000000001",
-            identifier: "admin@eduworkshop.local",
-            roles: ["ADMIN"],
-          },
-          updatedBy: {
-            userId: "00000000-0000-0000-0000-000000000001",
-            identifier: "admin@eduworkshop.local",
-            roles: ["ADMIN"],
-          },
-          createdAt: "2026-08-20T08:00:00Z",
-          updatedAt: "2026-08-25T14:30:00Z",
-          maintenanceHistory: [],
-        }),
+        body: JSON.stringify(simulatedRoomState),
       });
     },
   );
