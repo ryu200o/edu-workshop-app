@@ -24,7 +24,11 @@ export default defineConfig({
     {
       name: "authenticated",
       dependencies: ["setup"],
-      testMatch: [/navbar\.spec\.ts/, /rooms\.spec\.ts/],
+      testMatch: [
+        /navbar\.spec\.ts/,
+        /rooms\.spec\.ts/,
+        /room-concurrency\.spec\.ts/,
+      ],
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/user.json",

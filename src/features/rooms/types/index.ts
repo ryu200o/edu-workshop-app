@@ -24,6 +24,7 @@ export interface RoomSummaryView {
   code: number | string;
   capacity: number;
   state: RoomStatus;
+  version: number;
   createdAt?: string;
   currentMaintenanceSchedule?: MaintenanceScheduleView | null;
 }
@@ -36,6 +37,7 @@ export interface RoomDetailView {
   code: number | string;
   capacity: number;
   state: RoomStatus;
+  version: number;
   createdBy?: AuditActor;
   updatedBy?: AuditActor;
   createdAt?: string;
@@ -80,22 +82,15 @@ export interface CreateRoomRequest {
   capacity: number;
 }
 
-export interface RenameRoomRequest {
-  newName: string;
+export interface UpdateRoomProfileRequest {
+  name: string;
+  building: string;
+  floor: number;
+  code: number;
+  capacity: number;
 }
 
-export interface RelocateRoomRequest {
-  newBuilding: string;
-  newFloor: number;
-}
-
-export interface ChangeRoomCodeRequest {
-  newCode: number;
-}
-
-export interface ChangeRoomCapacityRequest {
-  newCapacity: number;
-}
+export type UpdateRoomProfilePayload = UpdateRoomProfileRequest;
 
 export interface ScheduleMaintenanceRequest {
   startTime: string;

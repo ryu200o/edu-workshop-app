@@ -63,6 +63,8 @@ export const editRoomSchema = z.object({
 });
 
 export type EditRoomFormValues = z.infer<typeof editRoomSchema>;
+export const updateRoomProfileSchema = editRoomSchema;
+export type UpdateRoomProfileFormValues = EditRoomFormValues;
 
 export const scheduleMaintenanceSchema = z
   .object({
