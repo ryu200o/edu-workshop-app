@@ -38,6 +38,7 @@ export function RoomStatusDialog({
       await statusMutation.mutateAsync({
         id: room.id,
         targetStatus,
+        version: room.version,
       });
 
       const label =

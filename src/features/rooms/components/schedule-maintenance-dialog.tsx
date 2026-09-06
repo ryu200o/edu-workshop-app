@@ -74,6 +74,7 @@ export function ScheduleMaintenanceDialog({
           reason: values.reason?.trim() || undefined,
         },
         idempotencyKey,
+        version: room.version,
       });
 
       toast.success(`Đã lên lịch bảo trì thành công cho phòng "${room.name}"!`);
